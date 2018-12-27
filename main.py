@@ -6,7 +6,7 @@ import time
 token = 'ed1271af9e8883f7a7c2cefbfddfcbc61563029666c487b2f71a5227cce0d1b533c4af4c5b888633c06ae'
 params = {
     'access_token': token,
-    'v': '5.92'
+    'v': '5.92',
 }
 
 group_params = {
@@ -16,10 +16,14 @@ group_params = {
 }
 
 def get_group_list(id):
+
     try:
         params['user_id'] = int(id)
     except ValueError:
-        params['screen_name'] = id
+        params['user_ids'] = id
+        get_user_id = requests.get('https://api.vk.com/method/users.get', params).json()
+        params['user_id'] = get_user_id['response'][0]['id']
+        params.pop('user_ids')
 
     get_groups = requests.get('https://api.vk.com/method/groups.get', params).json()
     print(".", sep=' ', end='', flush=True)
@@ -27,10 +31,14 @@ def get_group_list(id):
     return get_groups['response']['items']
 
 def get_friend_list(id):
+
     try:
         params['user_id'] = int(id)
     except ValueError:
-        params['screen_name'] = id
+        params['user_ids'] = id
+        get_user_id = requests.get('https://api.vk.com/method/users.get', params).json()
+        params['user_id'] = get_user_id['response'][0]['id']
+        params.pop('user_ids')
 
     get_friends = requests.get('https://api.vk.com/method/friends.get', params).json()
     print(".", sep=' ', end='', flush=True)
@@ -56,21 +64,33 @@ def get_final_list(groups, friends):
 
         except KeyError:
             time.sleep(3)
-            get_members = requests.get('https://api.vk.com/method/groups.getMembers', params).json()
-            group_memebers = get_members['response']['items']
+            try:
+                get_members = requests.get('https://api.vk.com/method/groups.getMembers', params).json()
+                group_memebers = get_members['response']['items']
+            except KeyError:
+                print("\nДоступ в группу id: " + get_members['error']['request_params'][4]['value'] + " закрыт.")
+                pass
 
         if not (set(group_memebers) & set(friends)):
             print(".", sep=' ', end='', flush=True)
 
             try:
                 result_group = requests.get('https://api.vk.com/method/groups.getById', group_params).json()
-                final_group_list.append(result_group['response'][0])
+                if not('deactivated' in result_group['response'][0]):
+                    final_group_list.append(result_group['response'][0])
+                else:
+                    pass
+
             except KeyError:
                 time.sleep(3)
                 result_group = requests.get('https://api.vk.com/method/groups.getById', group_params).json()
-                final_group_list.append(result_group['response'][0])
+                if not('deactivated' in result_group['response'][0]):
+                    final_group_list.append(result_group['response'][0])
+                else:
+                    pass
 
     return final_group_list
+
 
 def parse_to_json(group_list):
 
