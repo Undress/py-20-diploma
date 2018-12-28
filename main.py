@@ -3,7 +3,6 @@ import json
 import time
 
 
-
 def load_config(config_file):
     with open(config_file) as file:
         config = json.load(file)
@@ -28,6 +27,7 @@ def get_group_list(id):
     print(".", sep=' ', end='', flush=True)
 
     return get_groups['response']['items']
+
 
 def get_friend_list(id):
 
@@ -73,8 +73,6 @@ def get_group_memebers(groups):
                 print(e)
                 pass
 
-
-
     return group_member_list
 
 
@@ -85,7 +83,7 @@ def get_unique_groups(group_members, friends):
     for i in group_members:
 
         if not (set(i['member_list']) & set(friends)):
-             unique_groups.append(i['id'])
+            unique_groups.append(i['id'])
 
     return unique_groups
 
@@ -122,57 +120,6 @@ def get_group_details(group_list):
     return group_detais
 
 
-
-# def get_final_list(groups, friends):
-#
-#     final_group_list = []
-#
-#
-#     for i in groups:
-#
-#         params['group_id'] = i
-#         group_params['group_id'] = i
-#
-#         print(".", sep=' ', end='', flush=True)
-#
-#
-#
-#
-#         try:
-#             get_members = requests.get('https://api.vk.com/method/groups.getMembers', params).json()
-#             group_memebers = get_members['response']['items']
-#
-#         except KeyError:
-#             print(get_members)
-#             try:
-#                 get_members = requests.get('https://api.vk.com/method/groups.getMembers', params).json()
-#                 group_memebers = get_members['response']['items']
-#             except KeyError:
-#                 print(get_members)
-#                 print("\nДоступ в группу id: " + get_members['error']['request_params'][4]['value'] + " закрыт.")
-#                 pass
-#
-#         if not (set(group_memebers) & set(friends)):
-#             print(".", sep=' ', end='', flush=True)
-#
-#             try:
-#                 result_group = requests.get('https://api.vk.com/method/groups.getById', group_params).json()
-#                 if not('deactivated' in result_group['response'][0]):
-#                     final_group_list.append(result_group['response'][0])
-#                 else:
-#                     pass
-#
-#             except KeyError:
-#                 time.sleep(3)
-#                 result_group = requests.get('https://api.vk.com/method/groups.getById', group_params).json()
-#                 if not('deactivated' in result_group['response'][0]):
-#                     final_group_list.append(result_group['response'][0])
-#                 else:
-#                     pass
-#
-#     return final_group_list
-
-
 def parse_to_json(group_list):
 
     groups_list = []
@@ -181,7 +128,7 @@ def parse_to_json(group_list):
         group_id = i['id']
         group_name = i['name']
         members_count = i['members_count']
-        groups_list.append({"name" : group_name, "gid" : group_id, "members_count" : members_count})
+        groups_list.append({"name": group_name, "gid": group_id, "members_count": members_count})
 
     with open('groups.json', 'w', encoding='utf8') as f:
         json.dump(groups_list, f, ensure_ascii=False)
@@ -190,7 +137,6 @@ def parse_to_json(group_list):
 
 
 def main():
-
 
     user_id = input("Введите ID пользователя: ")
 
