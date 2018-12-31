@@ -13,79 +13,74 @@ def load_config(config_file):
 params = load_config("token.json")
 
 
-def get_group_list(id):
+def set_user_param(id):
 
     try:
         params['user_id'] = int(id)
+
     except ValueError:
         params['user_ids'] = id
         get_user_id = requests.get('https://api.vk.com/method/users.get', params).json()
-        params['user_id'] = get_user_id['response'][0]['id']
-        params.pop('user_ids')
-
-    get_groups = requests.get('https://api.vk.com/method/groups.get', params).json()
-    print(".", sep=' ', end='', flush=True)
-
-    return get_groups['response']['items']
-
-
-def get_friend_list(id):
-
-    try:
-        params['user_id'] = int(id)
-    except ValueError:
-        params['user_ids'] = id
-        get_user_id = requests.get('https://api.vk.com/method/users.get', params).json()
-        params['user_id'] = get_user_id['response'][0]['id']
-        params.pop('user_ids')
-
-    get_friends = requests.get('https://api.vk.com/method/friends.get', params).json()
-    print(".", sep=' ', end='', flush=True)
-
-    return get_friends['response']['items']
-
-
-def get_group_memebers(groups):
-
-    group_member_list = []
-
-    for i in groups:
-        params['group_id'] = i
-
-        print(".", sep=' ', end='', flush=True)
-        get_members = requests.get('https://api.vk.com/method/groups.getMembers', params).json()
 
         try:
-            group_member_list.append({'id': i, 'member_list': get_members['response']['items']})
+            params['user_id'] = get_user_id['response'][0]['id']
 
         except Exception as e:
-            if get_members['error']['error_code'] == 6:
+            if get_user_id['error']['error_code'] == 6:
                 time.sleep(2)
-                print(".", sep=' ', end='', flush=True)
-                get_members = requests.get('https://api.vk.com/method/groups.getMembers', params).json()
-                group_member_list.append({'id': i, 'member_list': get_members['response']['items']})
-
-            elif get_members['error']['error_code'] == 15:
-                print("\nДоступ к группе: " + str(i) + " закрыт")
-                pass
-
+                get_user_id = requests.get('https://api.vk.com/method/users.get', params).json()
+                params['user_id'] = get_user_id['response'][0]['id']
             else:
                 print(e)
                 pass
 
-    return group_member_list
+        params.pop('user_ids')
 
 
-def get_unique_groups(group_members, friends):
+def get_group_list(id):
 
-    unique_groups = []
+    set_user_param(id)
+    print(".", sep=' ', end='', flush=True)
+    get_groups = requests.get('https://api.vk.com/method/groups.get', params).json()
 
-    for i in group_members:
+    try:
+        return get_groups['response']['items']
 
-        if not (set(i['member_list']) & set(friends)):
-            unique_groups.append(i['id'])
+    except Exception:
+            if get_groups['error']['error_code'] == 6:
+                time.sleep(2)
+                print(".", sep=' ', end='', flush=True)
+                get_groups = requests.get('https://api.vk.com/method/groups.get', params).json()
+                try:
+                    return get_groups['response']['items']
+                except Exception:
+                    return []
+            else:
+                return []
 
-    return unique_groups
+
+def get_friend_list(id):
+
+    set_user_param(id)
+
+    get_friends = requests.get('https://api.vk.com/method/friends.get', params).json()
+
+    return get_friends['response']['items']
+
+
+def get_unique_groups(friend_list, group_list):
+
+    not_unique_groups = set()
+
+    for i in friend_list:
+
+        friend_group_list = get_group_list(i)
+
+        not_unique_groups.update(set(friend_group_list) & set(group_list))
+
+    unique_group_list = list(set(group_list) - not_unique_groups)
+
+    return unique_group_list
 
 
 def get_group_details(group_list):
@@ -144,9 +139,7 @@ def main():
 
     friend_list = get_friend_list(user_id)
 
-    group_members = get_group_memebers(group_list)
-
-    unique_group_list = get_unique_groups(group_members, friend_list)
+    unique_group_list = get_unique_groups(friend_list, group_list)
 
     final_list = get_group_details(unique_group_list)
 
